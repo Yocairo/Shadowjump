@@ -1,14 +1,8 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include "Hooks.h"
 #include <cstdio>
 #include <iostream>
-#include <mmsystem.h>
-
-// These are required for PlaySound, which is a nice way to tell if a function has been reached
-#pragma comment(lib, "Winmm.lib")
-#define ACTIVATE_SOUND      L"C:\\Windows\\Media\\Speech On.wav"
-#define DEACTIVATE_SOUND    L"C:\\Windows\\Media\\Speech Off.wav"
+#include "Hooks.h"
 
 typedef struct
 {
@@ -39,7 +33,7 @@ DWORD CALLBACK DllThread(LPVOID lpParameter)
     cout << "Attempting to install hooks.." << endl;
 
     // Try to install the low level hook(s)
-    if (installHooks(dllHandle, GetCurrentThreadId()))
+    if (installHooks(dllHandle, 0))
     {
         // We successfully installed the hook(s)
         cout << "Successfully installed hooks" << endl;

@@ -1,10 +1,11 @@
 #include "pch.h"
 
 #include <Windows.h>
-#include "KeyboardHandler.h"
 #include <iostream>
+#include "InputHandler.h"
 
 HHOOK hKeyboardHook = NULL;
+HHOOK hMouseHook = NULL;
 
 using namespace std;
 
@@ -17,10 +18,11 @@ using namespace std;
 bool installHooks(HMODULE dllHandle, DWORD threadId)
 {
     // For low level hook, we can't use thread id
-    hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardHookProc, dllHandle, 0);
-    if (hKeyboardHook == NULL)
+    hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardHookProc, dllHandle, threadId);
+    hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC)LowLevelMouseHookProc, dllHandle, threadId);
+    if ((hKeyboardHook == NULL) || (hMouseHook == NULL))
     {
-        cout << "SetWindowsHookEx error code: " << GetLastError() << endl;
+        cout << "Hook error code: " << GetLastError() << endl;
         return false;
     }
 
@@ -34,8 +36,13 @@ void uninstallHooks()
 {
     if (hKeyboardHook)
     {
-        UnhookWindowsHookEx(hKeyboardHook);
+        (void)UnhookWindowsHookEx(hKeyboardHook);
+        hKeyboardHook = NULL;
     }
 
-    hKeyboardHook = NULL;
+    if (hMouseHook)
+    {
+        (void)UnhookWindowsHookEx(hMouseHook);
+        hMouseHook = NULL;
+    }
 }
