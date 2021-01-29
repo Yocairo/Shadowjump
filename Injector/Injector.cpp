@@ -2,7 +2,7 @@
 #include <iostream>
 #include <tlhelp32.h>
 
-#define DLL_PATH		"R:/Projects/CoD4/Shadowjump/DLL/Debug/Shadowjump.dll"
+#define DLL_PATH		"R:/Projects/CoD4/Shadowjump/Debug/DLL.dll"
 #define PROCESS_NAME	"iw3mp.exe"
 
 using namespace std;
@@ -17,6 +17,12 @@ using namespace std;
 bool injectDLL(DWORD processId, string dllPath, DWORD *pThreadId)
 {
     cout << "Attempting to inject DLL with path '" << dllPath << "' into process with id " << processId << std::endl;
+
+    if (GetFileAttributesA(DLL_PATH) == INVALID_FILE_ATTRIBUTES)
+    {
+        cerr << "File does not seem to exist or insufficient permissions" << std::endl;
+        return false;
+    }
 
     // Open the process
     HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, false, processId);
@@ -59,6 +65,9 @@ bool injectDLL(DWORD processId, string dllPath, DWORD *pThreadId)
         cerr << "Failed to create remote thread" << std::endl;
         return false;
     }
+
+    // Close the handle to the process we opened
+    CloseHandle(hProc);
 
     return true;
 }
@@ -113,7 +122,5 @@ int main()
     }
 
     cout << "Successfully loaded DLL from path '" << DLL_PATH << "' into process with id " << processId << std::endl;
-    
-    (void)cin.get();
     return 0;
 }
