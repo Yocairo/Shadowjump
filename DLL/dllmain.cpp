@@ -1,62 +1,39 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include "Hooks.h"
 #include <cstdio>
 #include <iostream>
-#include <mmsystem.h>
-
-// These are required for PlaySound, which is a nice way to tell if a function has been reached
-#pragma comment(lib, "Winmm.lib")
-#define ACTIVATE_SOUND      L"C:\\Windows\\Media\\Speech On.wav"
-#define DEACTIVATE_SOUND    L"C:\\Windows\\Media\\Speech Off.wav"
-
-typedef struct
-{
-    HMODULE dllHandle;
-} SDllThreadParams;
-
-using namespace std;
+#include "Application.h"
+#include <TlHelp32.h>
 
 /// <summary>
-/// Thread that does all the work in this DLL
+/// Find the id of a process by its name. Returns MAXDWORD if not found
 /// </summary>
-/// <param name="lpParameter">Parameters passed to this thread</param>
-/// <returns>Always 0</returns>
-DWORD CALLBACK DllThread(LPVOID lpParameter)
+/// <param name="processName">The name of the process for which to find pid</param>
+/// <returns>The pid if found, otherwise MAXDWORD</returns>
+DWORD getProcessIdByName(std::string processName)
 {
-    SDllThreadParams *pParams = (SDllThreadParams *)lpParameter;
-    HMODULE dllHandle = pParams->dllHandle;
-    delete pParams; // Caller is not able to free this memory, so we must do so
+    DWORD processId = MAXDWORD;
 
-    // Allocate and redirect console so we can display debug output
-    FILE *pNewConsole;
-    AllocConsole();
-    freopen_s(&pNewConsole, "CONOUT$", "w", stdout);
-    freopen_s(&pNewConsole, "CONOUT$", "w", stderr);
-    cout.clear();
-    cerr.clear();
+    // Create a buffer for the snapshot entries to be stored in
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
 
-    cout << "Attempting to install hooks.." << endl;
+    // Create a snapshot of all current processes
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 
-    // Try to install the low level hook(s)
-    if (installHooks(dllHandle, GetCurrentThreadId()))
+    // Loop through the processes until we find what we want
+    while (Process32Next(snapshot, &entry) == TRUE)
     {
-        // We successfully installed the hook(s)
-        cout << "Successfully installed hooks" << endl;
-
-        MSG uMsg;
-        while (GetMessage(&uMsg, NULL, 0, 0))
+        if (_wcsicmp(entry.szExeFile, L"iw3mp.exe") == 0)
         {
-            TranslateMessage(&uMsg);
-            DispatchMessage(&uMsg);
+            // Found the id of the desired process
+            processId = entry.th32ProcessID;
+            break;
         }
-
-        uninstallHooks();
     }
 
-    // Leaving the thread, play a sound before we go
-    cout << "Failed to install hooks" << endl;
-    return 0;
+    CloseHandle(snapshot);
+    return processId;
 }
 
 /// <summary>
@@ -73,13 +50,19 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReasonForCall, LPVOID lpReserved)
     {
         case DLL_PROCESS_ATTACH:
         {
+            // Ensure we only run our application inside iw3mp.exe
+            if (GetCurrentProcessId() != getProcessIdByName("iw3mp.exe"))
+            {
+                return false;
+            }
+
             // Prepare arguments we will be passing to new thread
             SDllThreadParams *pParams = new SDllThreadParams;
             pParams->dllHandle = hModule; // Handle to "this" DLL
 
             // DLL was attached to a process. Since we injected it specifically into iw3mp.exe, we can now simply install a low level keyboard hook
             // This needs to be done in a new thread, since DllMain mustn't do more than simple initialization (or thread creation)
-            threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DllThread, pParams, 0, NULL);
+            threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplicationThread, pParams, 0, NULL);
 
         } break;
         case DLL_THREAD_ATTACH:
@@ -92,13 +75,7 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReasonForCall, LPVOID lpReserved)
         } break;
         case DLL_PROCESS_DETACH:
         {
-            if (threadHandle != NULL)
-            {
-                // We are disabling this warning, because there is no way we can WaitForSingleObject when the process is detaching
-                // This means TerminateThread is really the only option we have here
-#pragma warning(disable : 6258)
-                (void)TerminateThread(threadHandle, 0);
-            }
+
         } break;
     }
     return true;
