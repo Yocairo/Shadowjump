@@ -1,12 +1,13 @@
 #include "pch.h"
 
 #include <string>
+#include <iostream>
+
+using namespace std;
 
 typedef void (*SV_GameSendServerCommand_t)(int, const char *, const char *);
-typedef void (*Dvar_FindMalleableVar_t)(const char *);
 
 static SV_GameSendServerCommand_t SV_GameSendServerCommand = (SV_GameSendServerCommand_t)0x00531320;
-static Dvar_FindMalleableVar_t Dvar_FindMalleableVar = (Dvar_FindMalleableVar_t)0x569DA0;
 
 /// <summary>
 /// Print a message on bottom left of screen by calling SV_GameSendServerCommand
@@ -14,6 +15,8 @@ static Dvar_FindMalleableVar_t Dvar_FindMalleableVar = (Dvar_FindMalleableVar_t)
 /// <param name="strMsg">The message that will be displayed</param>
 void iprintln(std::string strMsg)
 {
+    cout << "Called iprintln with: " << strMsg << endl;
+
     static const char *szPctS = "%s";
     strMsg = "e \"" + strMsg + "\"";
     const char *szMsg = strMsg.c_str();

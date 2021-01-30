@@ -4,12 +4,33 @@
 #include <iostream>
 #include "Hooks.h"
 
-typedef struct
-{
-    HMODULE dllHandle;
-} SDllThreadParams;
+static FILE *pNewConsoleOut = nullptr;
+static FILE *pNewConsoleErr = nullptr;
+static HMODULE dllHandle = nullptr;
 
 using namespace std;
+
+/// <summary>
+/// Commit sudoku
+/// </summary>
+void unloadCurrentDll()
+{
+    uninstallHooks();
+
+    if (pNewConsoleOut)
+    {
+        fclose(pNewConsoleOut);
+    }
+
+    if (pNewConsoleErr)
+    {
+        fclose(pNewConsoleErr);
+    }
+
+    FreeConsole();
+
+    FreeLibraryAndExitThread(dllHandle, 0);
+}
 
 /// <summary>
 /// Thread that does all the work in this DLL
@@ -18,15 +39,10 @@ using namespace std;
 /// <returns>Always 0</returns>
 DWORD CALLBACK DllThread(LPVOID lpParameter)
 {
-    SDllThreadParams *pParams = (SDllThreadParams *)lpParameter;
-    HMODULE dllHandle = pParams->dllHandle;
-    delete pParams; // Caller is not able to free this memory, so we must do so
-
     // Allocate and redirect console so we can display debug output
-    FILE *pNewConsole;
     AllocConsole();
-    freopen_s(&pNewConsole, "CONOUT$", "w", stdout);
-    freopen_s(&pNewConsole, "CONOUT$", "w", stderr);
+    freopen_s(&pNewConsoleOut, "CONOUT$", "w", stdout);
+    freopen_s(&pNewConsoleErr, "CONOUT$", "w", stderr);
     cout.clear();
     cerr.clear();
 
@@ -47,9 +63,11 @@ DWORD CALLBACK DllThread(LPVOID lpParameter)
 
         uninstallHooks();
     }
+    else
+    {
+        cout << "Failed to install hooks" << endl;
+    }
 
-    // Leaving the thread, play a sound before we go
-    cout << "Failed to install hooks" << endl;
     return 0;
 }
 
@@ -67,13 +85,11 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReasonForCall, LPVOID lpReserved)
     {
         case DLL_PROCESS_ATTACH:
         {
-            // Prepare arguments we will be passing to new thread
-            SDllThreadParams *pParams = new SDllThreadParams;
-            pParams->dllHandle = hModule; // Handle to "this" DLL
+            dllHandle = hModule; // Handle to "this" DLL
 
             // DLL was attached to a process. Since we injected it specifically into iw3mp.exe, we can now simply install a low level keyboard hook
             // This needs to be done in a new thread, since DllMain mustn't do more than simple initialization (or thread creation)
-            threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DllThread, pParams, 0, NULL);
+            threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DllThread, nullptr, 0, nullptr);
 
         } break;
         case DLL_THREAD_ATTACH:
