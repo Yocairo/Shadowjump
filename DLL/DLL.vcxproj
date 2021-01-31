@@ -154,18 +154,22 @@
     <ClInclude Include="CoD4functions.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Action.h" />
+    <ClInclude Include="CoD4Application.h" />
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="InputHandler.h" />
+    <ClInclude Include="OutputSimulator.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Storage.h" />
     <ClInclude Include="TimeHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Action.cpp" />
+    <ClCompile Include="CoD4Application.cpp" />
     <ClCompile Include="CoD4functions.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="InputHandler.cpp" />
+    <ClCompile Include="OutputSimulator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

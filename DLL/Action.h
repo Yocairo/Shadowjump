@@ -12,38 +12,38 @@ enum ActionType
 
 typedef struct
 {
-    DWORD x : 16;
-    DWORD y : 16;
+    INT x : 16;
+    INT y : 16;
 } SMouseMove;
 
 typedef struct
 {
-    DWORD button;
+    INT button;
 } SMouseDown;
 
 typedef struct
 {
-    DWORD button;
+    INT button;
 } SMouseUp;
 
 typedef struct
 {
-    DWORD button;
+    INT button;
 } SMouseClick;
 
 typedef struct
 {
-    DWORD button;
+    INT button;
 } SKeyDown;
 
 typedef struct
 {
-    DWORD button;
+    INT button;
 } SKeyUp;
 
 typedef struct
 {
-    DWORD button;
+    INT button;
 } SKeyPress;
 
 typedef struct
@@ -58,17 +58,20 @@ typedef struct
         SKeyDown keyDown;
         SKeyUp keyUp;
         SKeyPress keyPress;
-        DWORD rawValue;
+        INT rawValue;
     };
 } SAction;
-
-void resetKeyStates();
 
 class Action
 {
 public:
-    static void storeMouseAction(ULONGLONG, WPARAM, LPARAM);
-    static void storeKeyAction(ULONGLONG, WPARAM, LPARAM);
+    static DWORD s_prevKeyDownButton;
+    static INT s_prevXCoord;
+    static INT s_prevYCoord;
+public:
+    static void resetInputStates();
+    static void storeMouseAction(UINT, WPARAM, LPARAM);
+    static void storeKeyAction(UINT, WPARAM, LPARAM);
 private:
     Action();
 };

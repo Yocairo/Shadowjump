@@ -3,11 +3,43 @@
 #include <Windows.h>
 #include <iostream>
 #include "InputHandler.h"
-
-HHOOK hKeyboardHook = NULL;
-HHOOK hMouseHook = NULL;
+#include "Hooks.h"
 
 using namespace std;
+
+Hooks *Hooks::s_pInstance = nullptr;
+
+/// <summary>
+/// Get the instance of Hooks singleton
+/// </summary>
+/// <returns></returns>
+Hooks *Hooks::getInstance()
+{
+    if (s_pInstance == nullptr)
+    {
+        s_pInstance = new Hooks();
+    }
+
+    return s_pInstance;
+}
+
+/// <summary>
+/// Get a handle to the keyboard hook
+/// </summary>
+/// <returns></returns>
+HHOOK Hooks::getKeyboardHook()
+{
+    return m_hKeyboardHook;
+}
+
+/// <summary>
+/// Get a handle to the mouse hook
+/// </summary>
+/// <returns></returns>
+HHOOK Hooks::getMouseHook()
+{
+    return m_hMouseHook;
+}
 
 /// <summary>
 /// Install the necessary hook(s)
@@ -15,12 +47,12 @@ using namespace std;
 /// <param name="dllHandle">Handle to the DLL</param>
 /// <param name="threadId">Thread id for the hook</param>
 /// <returns>true if successfully installed</returns>
-bool installHooks(HMODULE dllHandle, DWORD threadId)
+bool Hooks::install(HMODULE dllHandle, DWORD threadId)
 {
     // For low level hook, we can't use thread id
-    hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardHookProc, dllHandle, threadId);
-    hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC)LowLevelMouseHookProc, dllHandle, threadId);
-    if ((hKeyboardHook == NULL) || (hMouseHook == NULL))
+    m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardHookProc, dllHandle, threadId);
+    m_hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC)LowLevelMouseHookProc, dllHandle, threadId);
+    if ((m_hKeyboardHook == NULL) || (m_hMouseHook == NULL))
     {
         cout << "Hook error code: " << GetLastError() << endl;
         return false;
@@ -32,17 +64,17 @@ bool installHooks(HMODULE dllHandle, DWORD threadId)
 /// <summary>
 /// Uninstall any hooks installed by a call to installHooks
 /// </summary>
-void uninstallHooks()
+void Hooks::uninstall()
 {
-    if (hKeyboardHook)
+    if (m_hKeyboardHook)
     {
-        (void)UnhookWindowsHookEx(hKeyboardHook);
-        hKeyboardHook = NULL;
+        (void)UnhookWindowsHookEx(m_hKeyboardHook);
+        m_hKeyboardHook = NULL;
     }
 
-    if (hMouseHook)
+    if (m_hMouseHook)
     {
-        (void)UnhookWindowsHookEx(hMouseHook);
-        hMouseHook = NULL;
+        (void)UnhookWindowsHookEx(m_hMouseHook);
+        m_hMouseHook = NULL;
     }
 }

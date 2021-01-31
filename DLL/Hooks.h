@@ -2,5 +2,17 @@
 
 #include <Windows.h>
 
-bool installHooks(HMODULE, DWORD);
-void uninstallHooks();
+class Hooks
+{
+private:
+    static Hooks *s_pInstance;
+    HHOOK m_hKeyboardHook;
+    HHOOK m_hMouseHook;
+
+public:
+    static Hooks *getInstance();
+    bool install(HMODULE, DWORD);
+    HHOOK getKeyboardHook();
+    HHOOK getMouseHook();
+    void uninstall();
+};

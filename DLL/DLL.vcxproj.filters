@@ -39,6 +39,12 @@
     <ClInclude Include="TimeHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OutputSimulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CoD4Application.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -63,6 +69,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TimeHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OutputSimulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CoD4Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

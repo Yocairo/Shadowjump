@@ -5,16 +5,26 @@
 
 // For key up actions, Windows spams these if key is pressed down.
 // It's unnecessary to store them all, we can just store the down and (if available) up action
-static DWORD prevKeyDownButton = -1;
+DWORD Action::s_prevKeyDownButton = -1;
+INT Action::s_prevXCoord = 0;
+INT Action::s_prevYCoord = 0;
 
 /// <summary>
 /// Reset key state to before recording
 /// </summary>
-void resetKeyStates()
+void Action::resetInputStates()
 {
     // TODO: Perhaps move to InputHandler.cpp
     // TODO: Reset complete keyboard
-    prevKeyDownButton = -1;
+    s_prevKeyDownButton = -1;
+
+    // Start playback from current mouse position as we use relative coordinates
+    POINT point;
+    if (GetCursorPos(&point))
+    {
+        s_prevXCoord = point.x;
+        s_prevYCoord = point.y;
+    }
 }
 
 /// <summary>
@@ -23,7 +33,7 @@ void resetKeyStates()
 /// <param name="ts">Time offset compared to start of recording</param>
 /// <param name="wParam">wParam from mouse hook function</param>
 /// <param name="lParam">lParam from mouse hook function</param>
-void Action::storeMouseAction(ULONGLONG ts, WPARAM wParam, LPARAM lParam)
+void Action::storeMouseAction(UINT ts, WPARAM wParam, LPARAM lParam)
 {
     MSLLHOOKSTRUCT *pLLMouseHookStruct = (MSLLHOOKSTRUCT *)lParam; // TODO: Perhaps use timestamp from this struct
     // Ignore injected messages
@@ -47,15 +57,17 @@ void Action::storeMouseAction(ULONGLONG ts, WPARAM wParam, LPARAM lParam)
         case WM_LBUTTONUP:
         case WM_RBUTTONUP:
         {
-            action.type = ActionType::MouseButtonDown;
+            action.type = ActionType::MouseButtonUp;
             action.mouseButtonUp.button = (wParam == WM_RBUTTONDOWN) ? 1 : 0; // Left is 0, right is 1
         } break;
 
         case WM_MOUSEMOVE:
         {
-            action.type = ActionType::MouseButtonDown;
-            action.mouseMove.x = pLLMouseHookStruct->pt.x; // TODO: we can make this based on percentage of screen, so it will work in all resolutions
-            action.mouseMove.y = pLLMouseHookStruct->pt.y;
+            action.type = ActionType::MouseMove;
+            action.mouseMove.x = pLLMouseHookStruct->pt.x - s_prevXCoord; // TODO: we can make this based on percentage of screen, so it will work in all resolutions
+            action.mouseMove.y = pLLMouseHookStruct->pt.y - s_prevYCoord;
+            s_prevXCoord = pLLMouseHookStruct->pt.x;
+            s_prevYCoord = pLLMouseHookStruct->pt.y;
         } break;
 
         case WM_MOUSEWHEEL:
@@ -83,7 +95,7 @@ void Action::storeMouseAction(ULONGLONG ts, WPARAM wParam, LPARAM lParam)
 /// <param name="ts">Time offset compared to start of recording</param>
 /// <param name="wParam">wParam from keyboard hook function</param>
 /// <param name="lParam">lParam from keyboard hook function</param>
-void Action::storeKeyAction(ULONGLONG ts, WPARAM wParam, LPARAM lParam)
+void Action::storeKeyAction(UINT ts, WPARAM wParam, LPARAM lParam)
 {
     KBDLLHOOKSTRUCT *pLLKeyboardHookStruct = (KBDLLHOOKSTRUCT *)lParam; // TODO: Perhaps use timestamp from this struct
     // Ignore injected messages
@@ -100,11 +112,11 @@ void Action::storeKeyAction(ULONGLONG ts, WPARAM wParam, LPARAM lParam)
         case WM_KEYDOWN:
         //case WM_SYSKEYDOWN:
         {
-            if (prevKeyDownButton != pLLKeyboardHookStruct->vkCode)
+            if (s_prevKeyDownButton != pLLKeyboardHookStruct->vkCode)
             {
                 action.type = ActionType::KeyDown;
                 action.keyDown.button = pLLKeyboardHookStruct->vkCode;
-                prevKeyDownButton = pLLKeyboardHookStruct->vkCode;
+                s_prevKeyDownButton = pLLKeyboardHookStruct->vkCode;
             }
         } break;
         case WM_KEYUP:

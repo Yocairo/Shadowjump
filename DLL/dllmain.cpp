@@ -3,70 +3,21 @@
 #include <cstdio>
 #include <iostream>
 #include "Hooks.h"
-
-static FILE *pNewConsoleOut = nullptr;
-static FILE *pNewConsoleErr = nullptr;
-static HMODULE dllHandle = nullptr;
+#include "InputHandler.h"
+#include "TimeHelper.h"
+#include "CoD4Application.h"
 
 using namespace std;
-
-/// <summary>
-/// Commit sudoku
-/// </summary>
-void unloadCurrentDll()
-{
-    uninstallHooks();
-
-    if (pNewConsoleOut)
-    {
-        fclose(pNewConsoleOut);
-    }
-
-    if (pNewConsoleErr)
-    {
-        fclose(pNewConsoleErr);
-    }
-
-    FreeConsole();
-
-    FreeLibraryAndExitThread(dllHandle, 0);
-}
 
 /// <summary>
 /// Thread that does all the work in this DLL
 /// </summary>
 /// <param name="lpParameter">Parameters passed to this thread</param>
 /// <returns>Always 0</returns>
-DWORD CALLBACK DllThread(LPVOID lpParameter)
+DWORD CALLBACK ApplicationThread(LPVOID lpParameter)
 {
-    // Allocate and redirect console so we can display debug output
-    AllocConsole();
-    freopen_s(&pNewConsoleOut, "CONOUT$", "w", stdout);
-    freopen_s(&pNewConsoleErr, "CONOUT$", "w", stderr);
-    cout.clear();
-    cerr.clear();
-
-    cout << "Attempting to install hooks.." << endl;
-
-    // Try to install the low level hook(s)
-    if (installHooks(dllHandle, 0))
-    {
-        // We successfully installed the hook(s)
-        cout << "Successfully installed hooks" << endl;
-
-        MSG uMsg;
-        while (GetMessage(&uMsg, NULL, 0, 0))
-        {
-            TranslateMessage(&uMsg);
-            DispatchMessage(&uMsg);
-        }
-
-        uninstallHooks();
-    }
-    else
-    {
-        cout << "Failed to install hooks" << endl;
-    }
+    CoD4Application::getInstance((HMODULE)lpParameter)->run();
+    CoD4Application::getInstance()->exit();
 
     return 0;
 }
@@ -85,11 +36,11 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReasonForCall, LPVOID lpReserved)
     {
         case DLL_PROCESS_ATTACH:
         {
-            dllHandle = hModule; // Handle to "this" DLL
+            CoD4Application *pApplication = CoD4Application::getInstance(hModule);
 
             // DLL was attached to a process. Since we injected it specifically into iw3mp.exe, we can now simply install a low level keyboard hook
             // This needs to be done in a new thread, since DllMain mustn't do more than simple initialization (or thread creation)
-            threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DllThread, nullptr, 0, nullptr);
+            threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplicationThread, nullptr, 0, nullptr);
 
         } break;
         case DLL_THREAD_ATTACH:
