@@ -87,7 +87,15 @@ LRESULT CALLBACK LowLevelMouseHookProc(int code, WPARAM wParam, LPARAM lParam)
     }
 
     // If we're recording, store the action
-    Action::storeMouseAction(CoD4Application::getInstance()->getTimeHelper()->getTimePassed(), wParam, lParam);
+    if (wParam != WM_MOUSEMOVE)
+    {
+        Action::storeMouseAction(CoD4Application::getInstance()->getTimeHelper()->getTimePassed(), wParam, lParam);
+    }
+    else
+    {
+        // Store the view angles whenever we move the mouse
+        Action::storeCurrentViewAngles();
+    }
 
     return 0;
 }

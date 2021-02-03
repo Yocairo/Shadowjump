@@ -4,26 +4,14 @@
 #include "Storage.h"
 #include "TimeHelper.h"
 #include <iostream>
+#include <iomanip>
 #include <thread>
 #include "CoD4functions.h"
 #include "InputHandler.h"
 #include "CoD4Application.h"
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-void OutputSimulator::moveMouseTo(INT x, INT y)
-{
-    INPUT input = {0};
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MOVE;
-    input.mi.dx = (LONG)x;
-    input.mi.dy = (LONG)y;
-
-    SendInput(1, &input, sizeof(input));
-}
+CViewAngles_t *pViewAnglesAbsMod = (CViewAngles_t *)(0x00400000 + 0x0039E76C);
+CViewAngles_t *pViewAnglesTotal = (CViewAngles_t *)(0x00400000 + 0x00884FD8);
 
 /// <summary>
 /// Simulate a mouse down or up action of a specific mouse button
@@ -84,9 +72,10 @@ void OutputSimulator::executeAction(SAction &action)
 {
     switch (action.type)
     {
-        case ActionType::MouseMove:
+        case ActionType::ViewAngles:
         {
-            moveMouseTo(action.mouseMove.x, action.mouseMove.y);
+            pViewAnglesTotal->yaw += (action.viewAngles.yaw - pViewAnglesAbsMod->yaw);
+            pViewAnglesTotal->pitch += (action.viewAngles.pitch - pViewAnglesAbsMod->pitch);
         } break;
         case ActionType::MouseButtonDown:
         {

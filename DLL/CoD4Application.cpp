@@ -44,7 +44,7 @@ void CoD4Application::exit()
 {
     cout << "Unloading DLL" << endl;
 
-    Hooks::getInstance()->uninstall(); // Uninstall any hooks we may have added (keyboard, mouse)
+    Hooks::getInstance()->uninstallHooks(); // Uninstall any hooks we may have added (keyboard, mouse)
 
     if (m_pNewConsoleOut)
     {
@@ -111,15 +111,14 @@ void CoD4Application::run()
     cout.clear();
     cerr.clear();
 
-    cout << "Attempting to install hooks.." << endl;
-
     // Try to install the low level hook(s)
-    if (Hooks::getInstance()->install(m_dllInstance, 0))
+    cout << "Attempting to install hooks.." << endl;
+    if (Hooks::getInstance()->installHooks(m_dllInstance, 0))
     {
-        // We successfully installed the hook(s)
         cout << "Successfully installed hooks" << endl;
 
         // Improve Windows timer resolution to 1 ms
+        cout << "Attempt to improve timer resolution" << endl;
         if (TimeHelper::improveTimerResolution())
         {
             cout << "Changed timer resolution to 1 ms" << endl;

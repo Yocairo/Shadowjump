@@ -11,8 +11,8 @@ private:
 
 public:
     static Hooks *getInstance();
-    bool install(HMODULE, DWORD);
     HHOOK getKeyboardHook();
     HHOOK getMouseHook();
-    void uninstall();
+    bool installHooks(HMODULE, DWORD);
+    void uninstallHooks();
 };

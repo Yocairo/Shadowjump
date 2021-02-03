@@ -7,7 +7,6 @@
 class OutputSimulator
 {
 private:
-    void moveMouseTo(INT, INT);
     void mouseButtonAction(INT, bool);
     void keyDown(INT);
     void keyUp(INT);

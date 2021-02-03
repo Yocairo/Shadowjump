@@ -2,6 +2,7 @@
 #include "Action.h"
 #include "Storage.h"
 #include <iostream>
+#include "CoD4Application.h"
 
 // For key up actions, Windows spams these if key is pressed down.
 // It's unnecessary to store them all, we can just store the down and (if available) up action
@@ -17,14 +18,18 @@ void Action::resetInputStates()
     // TODO: Perhaps move to InputHandler.cpp
     // TODO: Reset complete keyboard
     s_prevKeyDownButton = -1;
+}
 
-    // Start playback from current mouse position as we use relative coordinates
-    POINT point;
-    if (GetCursorPos(&point))
-    {
-        s_prevXCoord = point.x;
-        s_prevYCoord = point.y;
-    }
+void Action::storeCurrentViewAngles()
+{
+    UINT ts = CoD4Application::getInstance()->getTimeHelper()->getTimePassed();
+    SAction action;
+    action.type = ActionType::ViewAngles;
+    extern CViewAngles_t *pViewAnglesAbsMod;
+    action.viewAngles.yaw = pViewAnglesAbsMod->yaw;
+    action.viewAngles.pitch = pViewAnglesAbsMod->pitch;
+
+    Storage::getInstance()->add(ts, &action);
 }
 
 /// <summary>
@@ -35,7 +40,7 @@ void Action::resetInputStates()
 /// <param name="lParam">lParam from mouse hook function</param>
 void Action::storeMouseAction(UINT ts, WPARAM wParam, LPARAM lParam)
 {
-    MSLLHOOKSTRUCT *pLLMouseHookStruct = (MSLLHOOKSTRUCT *)lParam; // TODO: Perhaps use timestamp from this struct
+    MSLLHOOKSTRUCT *pLLMouseHookStruct = (MSLLHOOKSTRUCT *)lParam;
     // Ignore injected messages
     if ((pLLMouseHookStruct->flags & (0x01 | 0x02)) > 0) // TODO: Do we actually want to do this?
     {
@@ -58,16 +63,7 @@ void Action::storeMouseAction(UINT ts, WPARAM wParam, LPARAM lParam)
         case WM_RBUTTONUP:
         {
             action.type = ActionType::MouseButtonUp;
-            action.mouseButtonUp.button = (wParam == WM_RBUTTONDOWN) ? 1 : 0; // Left is 0, right is 1
-        } break;
-
-        case WM_MOUSEMOVE:
-        {
-            action.type = ActionType::MouseMove;
-            action.mouseMove.x = pLLMouseHookStruct->pt.x - s_prevXCoord; // TODO: we can make this based on percentage of screen, so it will work in all resolutions
-            action.mouseMove.y = pLLMouseHookStruct->pt.y - s_prevYCoord;
-            s_prevXCoord = pLLMouseHookStruct->pt.x;
-            s_prevYCoord = pLLMouseHookStruct->pt.y;
+            action.mouseButtonUp.button = (wParam == WM_RBUTTONUP) ? 1 : 0; // Left is 0, right is 1
         } break;
 
         case WM_MOUSEWHEEL:
@@ -110,7 +106,7 @@ void Action::storeKeyAction(UINT ts, WPARAM wParam, LPARAM lParam)
     switch (wParam)
     {
         case WM_KEYDOWN:
-        //case WM_SYSKEYDOWN:
+        case WM_SYSKEYDOWN:
         {
             if (s_prevKeyDownButton != pLLKeyboardHookStruct->vkCode)
             {
@@ -120,7 +116,7 @@ void Action::storeKeyAction(UINT ts, WPARAM wParam, LPARAM lParam)
             }
         } break;
         case WM_KEYUP:
-        //case WM_SYSKEYUP:
+        case WM_SYSKEYUP:
         {
             action.type = ActionType::KeyUp;
             action.keyUp.button = pLLKeyboardHookStruct->vkCode;

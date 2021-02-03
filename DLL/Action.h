@@ -3,7 +3,7 @@
 enum ActionType
 {
     Unknown = 0,
-    MouseMove,
+    ViewAngles,
     MouseButtonDown,
     MouseButtonUp,
     KeyDown,
@@ -12,9 +12,15 @@ enum ActionType
 
 typedef struct
 {
-    INT x : 16;
-    INT y : 16;
-} SMouseMove;
+    float yaw;
+    float pitch;
+} SViewAngles;
+
+typedef struct
+{
+    float pitch;
+    float yaw;
+} CViewAngles_t;
 
 typedef struct
 {
@@ -51,14 +57,14 @@ typedef struct
     ActionType type;
     union
     {
-        SMouseMove mouseMove;
+        SViewAngles viewAngles;
         SMouseDown mouseButtonDown;
         SMouseUp mouseButtonUp;
         SMouseClick mouseClick;
         SKeyDown keyDown;
         SKeyUp keyUp;
         SKeyPress keyPress;
-        INT rawValue;
+        ULONGLONG rawValue;
     };
 } SAction;
 
@@ -72,6 +78,7 @@ public:
     static void resetInputStates();
     static void storeMouseAction(UINT, WPARAM, LPARAM);
     static void storeKeyAction(UINT, WPARAM, LPARAM);
+    static void storeCurrentViewAngles();
 private:
     Action();
 };

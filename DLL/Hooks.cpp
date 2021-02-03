@@ -47,7 +47,7 @@ HHOOK Hooks::getMouseHook()
 /// <param name="dllHandle">Handle to the DLL</param>
 /// <param name="threadId">Thread id for the hook</param>
 /// <returns>true if successfully installed</returns>
-bool Hooks::install(HMODULE dllHandle, DWORD threadId)
+bool Hooks::installHooks(HMODULE dllHandle, DWORD threadId)
 {
     // For low level hook, we can't use thread id
     m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardHookProc, dllHandle, threadId);
@@ -64,7 +64,7 @@ bool Hooks::install(HMODULE dllHandle, DWORD threadId)
 /// <summary>
 /// Uninstall any hooks installed by a call to installHooks
 /// </summary>
-void Hooks::uninstall()
+void Hooks::uninstallHooks()
 {
     if (m_hKeyboardHook)
     {
