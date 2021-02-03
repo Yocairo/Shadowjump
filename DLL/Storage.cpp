@@ -80,7 +80,7 @@ void Storage::import()
             {
                 SAction action;
                 action.type = static_cast<ActionType>(stoi(parts[1]));
-                action.rawValue = stoi(parts[2]);
+                action.rawValue = stoull(parts[2]);
                 s_timedActionsMap.insert(make_pair(stoul(parts[0]), action));
             }
             catch (int e)

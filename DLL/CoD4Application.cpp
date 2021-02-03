@@ -111,6 +111,9 @@ void CoD4Application::run()
     cout.clear();
     cerr.clear();
 
+    // Import actions from file if available
+    (void)Storage::getInstance()->import();
+
     // Try to install the low level hook(s)
     cout << "Attempting to install hooks.." << endl;
     if (Hooks::getInstance()->installHooks(m_dllInstance, 0))
