@@ -4,21 +4,9 @@
 #include <iostream>
 #include "CoD4Application.h"
 
-// For key up actions, Windows spams these if key is pressed down.
+// For key down actions, Windows spams these if key is pressed down.
 // It's unnecessary to store them all, we can just store the down and (if available) up action
-DWORD Action::s_prevKeyDownButton = -1;
-INT Action::s_prevXCoord = 0;
-INT Action::s_prevYCoord = 0;
-
-/// <summary>
-/// Reset key state to before recording
-/// </summary>
-void Action::resetInputStates()
-{
-    // TODO: Perhaps move to InputHandler.cpp
-    // TODO: Reset complete keyboard
-    s_prevKeyDownButton = -1;
-}
+set<DWORD> Action::s_keyDownSet;
 
 void Action::storeCurrentViewAngles()
 {
@@ -108,16 +96,21 @@ void Action::storeKeyAction(UINT ts, WPARAM wParam, LPARAM lParam)
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:
         {
-            if (s_prevKeyDownButton != pLLKeyboardHookStruct->vkCode)
+            // Only insert if it's not being held down already
+            if (s_keyDownSet.count(pLLKeyboardHookStruct->vkCode) <= 0)
             {
                 action.type = ActionType::KeyDown;
                 action.keyDown.button = pLLKeyboardHookStruct->vkCode;
-                s_prevKeyDownButton = pLLKeyboardHookStruct->vkCode;
             }
         } break;
         case WM_KEYUP:
         case WM_SYSKEYUP:
         {
+            // Remove the key from the 'held buttons' map
+            if (s_keyDownSet.count(pLLKeyboardHookStruct->vkCode) > 0)
+            {
+                s_keyDownSet.erase(pLLKeyboardHookStruct->vkCode);
+            }
             action.type = ActionType::KeyUp;
             action.keyUp.button = pLLKeyboardHookStruct->vkCode;
         } break;

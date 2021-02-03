@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Windows.h>
+#include <set>
+
 enum ActionType
 {
     Unknown = 0,
@@ -71,11 +74,8 @@ typedef struct
 class Action
 {
 public:
-    static DWORD s_prevKeyDownButton;
-    static INT s_prevXCoord;
-    static INT s_prevYCoord;
+    static std::set<DWORD> s_keyDownSet;
 public:
-    static void resetInputStates();
     static void storeMouseAction(UINT, WPARAM, LPARAM);
     static void storeKeyAction(UINT, WPARAM, LPARAM);
     static void storeCurrentViewAngles();

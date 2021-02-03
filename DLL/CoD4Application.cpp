@@ -45,6 +45,12 @@ void CoD4Application::exit()
 {
     cout << "Unloading DLL" << endl;
 
+    // We are disabling this warning, because there is no way we can WaitForSingleObject when the thread has a loop
+#pragma warning(disable : 6258)
+    (void)TerminateThread(m_samplerHandle, 0);
+#pragma warning(disable : 6258)
+    (void)TerminateThread(m_performerHandle, 0);
+
     Hooks::getInstance()->uninstallHooks(); // Uninstall any hooks we may have added (keyboard, mouse)
 
     if (m_pNewConsoleOut)
@@ -81,6 +87,8 @@ CoD4Application::CoD4Application(HMODULE dllInstance)
     m_isRecording = false;
     m_isPlayingBack = false;
     m_dllInstance = dllInstance;
+    m_samplerHandle = nullptr;
+    m_performerHandle = nullptr;
 }
 
 CoD4Application::~CoD4Application()
@@ -101,16 +109,17 @@ bool CoD4Application::isRecording()
 /// <summary>
 /// Loop responsible for asynchronously sampling view angles while recording
 /// </summary>
-void CoD4Application::sampleViewAngleLoop()
+DWORD CALLBACK CoD4Application::sampleViewAngleThread(LPVOID lpParameter)
 {
+    CoD4Application *pInst = (CoD4Application *)lpParameter;
     while (true)
     {
-        if (isRecording())
+        if (pInst->isRecording())
         {
             Action::storeCurrentViewAngles();
         }
 
-        Sleep(isRecording() ? 3 : 5); // 500 Hz seemed unstable?
+        Sleep(10); // 100 Hz
     }
 }
 
@@ -129,12 +138,12 @@ void CoD4Application::run()
     cerr.clear();
 
     // Import actions from file if available
+    cout << "Importing actions from file system" << endl;
     (void)Storage::getInstance()->import();
 
     // Start our view angle recording thread
-    thread sampler(&CoD4Application::sampleViewAngleLoop, this);
-    // Detach so program isn't terminated when thread exits
-    sampler.detach();
+    cout << "Starting sampler thread" << endl;
+    m_samplerHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CoD4Application::sampleViewAngleThread, this, 0, nullptr);
 
     // Try to install the low level hook(s)
     cout << "Attempting to install hooks.." << endl;
@@ -211,20 +220,19 @@ void CoD4Application::handleFunctionKey(WPARAM wParam, UINT keyCode)
     {
         if (!m_isRecording)
         {
+            iprintln("^2Started ^7recording");
             Storage::getInstance()->clear();
-            Action::resetInputStates();
             m_pTimeHelper->setStartTime();
             m_isRecording = true;
-            iprintln("^2Started ^7recording");
         }
     }
     else if (keyCode == VK_F2) // Stop recording
     {
         if (m_isRecording)
         {
-            m_isRecording = false;
             Storage::getInstance()->flush();
             iprintln("^1Stopped ^7recording");
+            m_isRecording = false;
         }
     }
     else if (keyCode == VK_F3) // Start playback
@@ -232,7 +240,7 @@ void CoD4Application::handleFunctionKey(WPARAM wParam, UINT keyCode)
         if (!m_isPlayingBack)
         {
             m_isPlayingBack = true;
-            m_pOutputSimulator->playback();
+            m_performerHandle = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)OutputSimulator::performerThread, m_pOutputSimulator, 0, 0);
             iprintln("^5Started ^7playback");
         }
     }

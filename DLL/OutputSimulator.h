@@ -11,7 +11,6 @@ private:
     void keyDown(INT);
     void keyUp(INT);
     void executeAction(SAction &);
-    void perform();
 public:
-    void playback();
+    static DWORD CALLBACK performerThread(LPVOID);
 };

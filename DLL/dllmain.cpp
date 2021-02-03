@@ -17,8 +17,6 @@ using namespace std;
 DWORD CALLBACK ApplicationThread(LPVOID lpParameter)
 {
     CoD4Application::getInstance((HMODULE)lpParameter)->run();
-    CoD4Application::getInstance()->exit();
-
     return 0;
 }
 

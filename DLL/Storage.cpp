@@ -64,7 +64,13 @@ void Storage::import()
 {
     clear(); // Clear timed actions map
 
+    // Try to open it. If it doesn't exist, we're done here
     m_pFileStream->open(m_filePath, ios::in);
+    if (!*m_pFileStream)
+    {
+        cout << "No timed actions file on disk" << endl;
+        return;
+    }
 
     string line;
     while (!m_pFileStream->eof())

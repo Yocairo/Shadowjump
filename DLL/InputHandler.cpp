@@ -58,7 +58,7 @@ LRESULT CALLBACK LowLevelKeyboardHookProc(int code, WPARAM wParam, LPARAM lParam
 
     // If the input is a function key, handle it. If it's not and we're recording, store the action
     KBDLLHOOKSTRUCT *pLLKeyboardStruct = (KBDLLHOOKSTRUCT *)lParam;
-    if (CoD4Application::getInstance()->isFunctionKey(pLLKeyboardStruct->vkCode))
+    if ((wParam == WM_KEYUP) && CoD4Application::getInstance()->isFunctionKey(pLLKeyboardStruct->vkCode))
     {
         CoD4Application::getInstance()->handleFunctionKey(wParam, pLLKeyboardStruct->vkCode);
     }

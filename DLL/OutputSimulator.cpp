@@ -104,8 +104,9 @@ void OutputSimulator::executeAction(SAction &action)
 /// <summary>
 /// Start performing the actions in the timed actions map
 /// </summary>
-void OutputSimulator::perform()
+DWORD CALLBACK OutputSimulator::performerThread(LPVOID lpParameter)
 {
+    OutputSimulator *pInst = (OutputSimulator *)lpParameter;
     if (!Storage::s_timedActionsMap.empty())
     {
         multimap<UINT, SAction>::iterator it = Storage::s_timedActionsMap.begin();
@@ -118,7 +119,7 @@ void OutputSimulator::perform()
         {
             if (timeHelper.getTimePassed() >= delay)
             {
-                executeAction(action);
+                pInst->executeAction(action);
 
                 // Make sure there is a next action
                 if (++it == Storage::s_timedActionsMap.end())
@@ -131,7 +132,7 @@ void OutputSimulator::perform()
             }
             
             // If the next action isn't due yet, only then can we sleep
-            if (timeHelper.getTimePassed() < delay)
+            if (delay > ((ULONG)timeHelper.getTimePassed() + 1))
             {
                 Sleep(1);
             }
@@ -139,16 +140,5 @@ void OutputSimulator::perform()
     }
 
     CoD4Application::getInstance()->onPlaybackFinished();
-}
-
-/// <summary>
-/// Start playback of recorded actions
-/// </summary>
-void OutputSimulator::playback()
-{
-    // Separate thread so other functionality is still available
-    thread performer(&OutputSimulator::perform, this);
-
-    // Detach so program isn't terminated when thread exits
-    performer.detach();
+    return 0;
 }
