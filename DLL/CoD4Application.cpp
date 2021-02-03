@@ -178,10 +178,18 @@ void CoD4Application::run()
 /// <summary>
 /// Called when performed thread finishes playback
 /// </summary>
-void CoD4Application::onPlaybackFinished()
+void CoD4Application::onPlaybackFinished(bool wasCancelled)
 {
     m_isPlayingBack = false;
-    iprintln("^4Finished ^7playback");
+
+    if (wasCancelled)
+    {
+        iprintln("^1Cancelled ^7playback");
+    }
+    else
+    {
+        iprintln("^4Finished ^7playback");
+    }
 }
 
 /// <summary>
@@ -237,7 +245,7 @@ void CoD4Application::handleFunctionKey(WPARAM wParam, UINT keyCode)
     }
     else if (keyCode == VK_F3) // Start playback
     {
-        if (!m_isPlayingBack)
+        if (!m_isPlayingBack && !m_isRecording)
         {
             m_isPlayingBack = true;
             m_performerHandle = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)OutputSimulator::performerThread, m_pOutputSimulator, 0, 0);
@@ -248,9 +256,9 @@ void CoD4Application::handleFunctionKey(WPARAM wParam, UINT keyCode)
     {
         if (m_isPlayingBack)
         {
-            // TODO: stop playback
-            //m_isPlayingBack = false;
-            //iprintln("^Stopped ^7playback");
+            OutputSimulator::requestCancellation();
+            cout << "Requested cancellation, waiting..." << endl;
+            (void)WaitForSingleObject(m_performerHandle, INFINITE);
         }
     }
     else

@@ -24,7 +24,7 @@ public:
     static CoD4Application *getInstance(); // Only callable after instance has been created with HMODULE argument
     TimeHelper *getTimeHelper();
     void run();
-    void onPlaybackFinished();
+    void onPlaybackFinished(bool);
     bool isFunctionKey(UINT keyCode);
     void handleFunctionKey(WPARAM, UINT);
     bool isRecording();

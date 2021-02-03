@@ -13,6 +13,8 @@
 CViewAngles_t *pViewAnglesAbsMod = (CViewAngles_t *)(0x00400000 + 0x0039E76C);
 CViewAngles_t *pViewAnglesTotal = (CViewAngles_t *)(0x00400000 + 0x00884FD8);
 
+bool OutputSimulator::s_cancellationRequested = false;
+
 /// <summary>
 /// Simulate a mouse down or up action of a specific mouse button
 /// </summary>
@@ -101,6 +103,11 @@ void OutputSimulator::executeAction(SAction &action)
     }
 }
 
+void OutputSimulator::requestCancellation()
+{
+    s_cancellationRequested = true;
+}
+
 /// <summary>
 /// Start performing the actions in the timed actions map
 /// </summary>
@@ -115,7 +122,7 @@ DWORD CALLBACK OutputSimulator::performerThread(LPVOID lpParameter)
 
         TimeHelper timeHelper {};
         timeHelper.setStartTime();
-        while (it != Storage::s_timedActionsMap.end())
+        while (!s_cancellationRequested && (it != Storage::s_timedActionsMap.end()))
         {
             if (timeHelper.getTimePassed() >= delay)
             {
@@ -132,13 +139,14 @@ DWORD CALLBACK OutputSimulator::performerThread(LPVOID lpParameter)
             }
             
             // If the next action isn't due yet, only then can we sleep
-            if (delay > ((ULONG)timeHelper.getTimePassed() + 1))
+            if (delay > ((LONGLONG)timeHelper.getTimePassed() + 1))
             {
                 Sleep(1);
             }
         }
     }
 
-    CoD4Application::getInstance()->onPlaybackFinished();
+    CoD4Application::getInstance()->onPlaybackFinished(s_cancellationRequested);
+    s_cancellationRequested = false;
     return 0;
 }
