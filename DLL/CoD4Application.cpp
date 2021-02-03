@@ -6,6 +6,7 @@
 #include "Storage.h"
 #include "TimeHelper.h"
 #include "Hooks.h"
+#include <thread>
 
 using namespace std;
 
@@ -98,6 +99,22 @@ bool CoD4Application::isRecording()
 }
 
 /// <summary>
+/// Loop responsible for asynchronously sampling view angles while recording
+/// </summary>
+void CoD4Application::sampleViewAngleLoop()
+{
+    while (true)
+    {
+        if (isRecording())
+        {
+            Action::storeCurrentViewAngles();
+        }
+
+        Sleep(isRecording() ? 3 : 5); // 500 Hz seemed unstable?
+    }
+}
+
+/// <summary>
 /// Thread that does all the work in this DLL
 /// </summary>
 /// <param name="lpParameter">Parameters passed to this thread</param>
@@ -113,6 +130,11 @@ void CoD4Application::run()
 
     // Import actions from file if available
     (void)Storage::getInstance()->import();
+
+    // Start our view angle recording thread
+    thread sampler(&CoD4Application::sampleViewAngleLoop, this);
+    // Detach so program isn't terminated when thread exits
+    sampler.detach();
 
     // Try to install the low level hook(s)
     cout << "Attempting to install hooks.." << endl;

@@ -20,6 +20,7 @@ public:
     static CoD4Application *getInstance(HMODULE);
     static CoD4Application *getInstance(); // Only callable after instance has been created with HMODULE argument
     TimeHelper *getTimeHelper();
+    void sampleViewAngleLoop();
     void run();
     void onPlaybackFinished();
     bool isFunctionKey(UINT keyCode);

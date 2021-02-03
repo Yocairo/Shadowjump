@@ -93,8 +93,7 @@ LRESULT CALLBACK LowLevelMouseHookProc(int code, WPARAM wParam, LPARAM lParam)
     }
     else
     {
-        // Store the view angles whenever we move the mouse
-        Action::storeCurrentViewAngles();
+        // Mouse move is not handled; instead we store view angles on a fixed rate
     }
 
     return 0;
