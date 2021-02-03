@@ -129,7 +129,9 @@ void OutputSimulator::perform()
                 delay = it->first;
                 action = it->second;
             }
-            else
+            
+            // If the next action isn't due yet, only then can we sleep
+            if (timeHelper.getTimePassed() < delay)
             {
                 Sleep(1);
             }
